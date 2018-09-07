@@ -3,35 +3,45 @@ package common
 import "fmt"
 
 type DbParams struct {
-	host     string
-	port     uint16
-	username string
-	password string
-	database string
-	sslmode  string
+	Host     string
+	Port     uint16
+	Username string
+	Password string
+	Database string
+	SslMode  string
 }
 
-var defaultParams DbParams = DbParams{
-	host:     "localhost",
-	port:     10032,
-	username: "postgres",
-	password: "lGzLc4okX9Gz",
-	database: "cs_arch_playground",
-	sslmode:  "disable",
+var DefaultParams DbParams = DbParams{
+	Host:     "localhost",
+	Port:     10032,
+	Username: "postgres",
+	Password: "lGzLc4okX9Gz",
+	Database: "cs_arch_playground",
+	SslMode:  "disable",
 }
 
 func DefaultConnectionString() string {
-	return ConnectionString(defaultParams)
+	return ConnectionString(DefaultParams)
 }
 
 func ConnectionString(params DbParams) string {
 	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		params.host,
-		params.port,
-		params.username,
-		params.password,
-		params.database,
-		params.sslmode)
+		params.Host,
+		params.Port,
+		params.Username,
+		params.Password,
+		params.Database,
+		params.SslMode)
+}
+
+func ConnectionUrl(params DbParams) string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
+		params.Username,
+		params.Password,
+		params.Host,
+		params.Port,
+		params.Database,
+		params.SslMode)
 }
 
 type DataRecord struct {
