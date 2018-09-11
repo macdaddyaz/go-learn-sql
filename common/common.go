@@ -1,6 +1,9 @@
 package common
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type DbParams struct {
 	Host     string
@@ -45,29 +48,49 @@ func ConnectionUrl(params DbParams) string {
 }
 
 type DataRecord struct {
-	Id int64
+	Id        int64 `gorm:"primary_key"`
+	CreatedAt time.Time
 }
 
-type Customer struct {
+type UpdatableRecord struct {
 	DataRecord
+	UpdatedAt time.Time
 }
 
 type Client struct {
-	DataRecord
+	UpdatableRecord
+	Customers []Customer
+	Name      string
+	Active    bool
+}
+
+type Customer struct {
+	UpdatableRecord
+	Client       Client
+	ClientId     int64
+	Code         string
+	FirstName    string
+	MiddleName   string
+	LastName     string
+	EmailAddress string
 }
 
 type Product struct {
+	UpdatableRecord
+}
+
+type CustomerProduct struct {
 	DataRecord
 }
 
 func NewCustomer(id int64) Customer {
-	return Customer{DataRecord{id}}
+	return Customer{UpdatableRecord: UpdatableRecord{DataRecord: DataRecord{Id: id}}}
 }
 
 func NewClient(id int64) Client {
-	return Client{DataRecord{id}}
+	return Client{UpdatableRecord: UpdatableRecord{DataRecord: DataRecord{Id: id}}}
 }
 
 func NewProduct(id int64) Product {
-	return Product{DataRecord{id}}
+	return Product{UpdatableRecord: UpdatableRecord{DataRecord: DataRecord{Id: id}}}
 }
