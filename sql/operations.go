@@ -10,7 +10,7 @@ import (
 )
 
 type sqlDao struct {
-	db *sql.DB
+	*sql.DB
 }
 
 func Init() sqlDao {
@@ -28,7 +28,7 @@ func Init() sqlDao {
 }
 
 func (dao sqlDao) Shutdown() {
-	err := dao.db.Close()
+	err := dao.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,7 +43,7 @@ func (dao sqlDao) PrintDatabaseState() {
 
 func printClients(dao sqlDao) {
 	log.Printf("*** %-15s ***", "Clients")
-	clients, err := dao.db.Query("SELECT id, name, active, created_at, updated_at FROM client ORDER BY id")
+	clients, err := dao.Query("SELECT id, name, active, created_at, updated_at FROM client ORDER BY id")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,7 +70,7 @@ func printClients(dao sqlDao) {
 
 func printProducts(dao sqlDao) {
 	log.Printf("*** %-15s ***", "Products")
-	products, err := dao.db.Query("SELECT id, name, active, created_at, updated_at FROM product ORDER BY id")
+	products, err := dao.Query("SELECT id, name, active, created_at, updated_at FROM product ORDER BY id")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func printProducts(dao sqlDao) {
 
 func printCustomers(dao sqlDao) {
 	log.Printf("*** %-15s ***", "Customers")
-	customers, err := dao.db.Query(`
+	customers, err := dao.Query(`
 		SELECT c.id, c.code, c.first_name, c.last_name, c.email_address, cl.name, c.created_at, c.updated_at
 		FROM customer c
 		JOIN client cl ON cl.id = c.client_id
@@ -140,7 +140,7 @@ func printCustomers(dao sqlDao) {
 
 func printCustomerProducts(dao sqlDao) {
 	log.Printf("*** %-15s ***", "Customer/Products")
-	customerProducts, err := dao.db.Query(`
+	customerProducts, err := dao.Query(`
 		SELECT c.code, c.first_name, c.last_name, p.name
 		FROM customer c
 		INNER JOIN customer_product cp ON c.id = cp.customer_id
@@ -172,7 +172,7 @@ func printCustomerProducts(dao sqlDao) {
 func (dao sqlDao) InsertClient(name string) Client {
 	log.Println("Insert client", name)
 	var id int64
-	err := dao.db.QueryRow(
+	err := dao.QueryRow(
 		`INSERT INTO client (name, active)
 		VALUES ($1, true)
 		RETURNING id`, name).Scan(&id)
@@ -185,7 +185,7 @@ func (dao sqlDao) InsertClient(name string) Client {
 func (dao sqlDao) InsertCustomer(code, firstName string, lastName string, email string, client Client) Customer {
 	log.Println("Insert customer", firstName, lastName)
 	var id int64
-	err := dao.db.QueryRow(
+	err := dao.QueryRow(
 		`INSERT INTO customer (code, first_name, last_name, email_address, client_id)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id`, code, firstName, lastName, email, client.Id).Scan(&id)
@@ -198,7 +198,7 @@ func (dao sqlDao) InsertCustomer(code, firstName string, lastName string, email 
 func (dao sqlDao) InsertProduct(name string) Product {
 	log.Println("Insert product", name)
 	var id int64
-	err := dao.db.QueryRow(
+	err := dao.QueryRow(
 		`INSERT INTO product (name, active)
 		VALUES ($1, true)
 		RETURNING id`, name).Scan(&id)
@@ -214,7 +214,7 @@ func (dao sqlDao) UpdateCustomerName(customer Customer, newFullName string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	res, err := dao.db.Exec(
+	res, err := dao.Exec(
 		`UPDATE customer
 		SET first_name = $2
 		  , last_name = $3
@@ -227,7 +227,7 @@ func (dao sqlDao) UpdateCustomerName(customer Customer, newFullName string) {
 
 func (dao sqlDao) UpdateProductName(product Product, newName string) {
 	log.Println("Update product", product.Id, "name to", newName)
-	res, err := dao.db.Exec(
+	res, err := dao.Exec(
 		`UPDATE product
 		SET name = $2
 		WHERE id = $1`, product.Id, newName)
@@ -239,7 +239,7 @@ func (dao sqlDao) UpdateProductName(product Product, newName string) {
 
 func (dao sqlDao) UpdateCustomerEmailAndLinkToProduct(customer Customer, newEmail string, product Product) {
 	log.Println("Update customer", customer.Id, "email address to", newEmail)
-	tx, err := dao.db.Begin()
+	tx, err := dao.Begin()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -266,7 +266,7 @@ func (dao sqlDao) UpdateCustomerEmailAndLinkToProduct(customer Customer, newEmai
 
 func (dao sqlDao) DeleteClient(client Client) {
 	log.Println("Delete client", client.Id)
-	_, err := dao.db.Exec(
+	_, err := dao.Exec(
 		`DELETE FROM client
 			WHERE id = $1`, client.Id)
 	if err == nil {
@@ -277,7 +277,7 @@ func (dao sqlDao) DeleteClient(client Client) {
 
 func (dao sqlDao) UpdateClientName(client Client, newName string) {
 	log.Println("Update client", client.Id, "name to", newName)
-	res, err := dao.db.Exec(
+	res, err := dao.Exec(
 		`UPDATE client
 			SET name = $2
 			WHERE id = $1`, client.Id, newName)
@@ -289,7 +289,7 @@ func (dao sqlDao) UpdateClientName(client Client, newName string) {
 
 func (dao sqlDao) DeleteCustomer(customer Customer) {
 	log.Println("Delete customer", customer.Id)
-	res, err := dao.db.Exec(
+	res, err := dao.Exec(
 		`DELETE FROM customer
 			WHERE id = $1`, customer.Id)
 	if err != nil {
@@ -300,7 +300,7 @@ func (dao sqlDao) DeleteCustomer(customer Customer) {
 
 func (dao sqlDao) DeleteAllCustomers() {
 	log.Println("Delete all customers")
-	res, err := dao.db.Exec(`DELETE FROM customer`)
+	res, err := dao.Exec(`DELETE FROM customer`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -309,7 +309,7 @@ func (dao sqlDao) DeleteAllCustomers() {
 
 func (dao sqlDao) DeleteAllProducts() {
 	log.Println("Delete all products")
-	res, err := dao.db.Exec(`DELETE FROM product`)
+	res, err := dao.Exec(`DELETE FROM product`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -318,7 +318,7 @@ func (dao sqlDao) DeleteAllProducts() {
 
 func (dao sqlDao) DeleteAllClients() {
 	log.Println("Delete all clients")
-	res, err := dao.db.Exec(`DELETE FROM client`)
+	res, err := dao.Exec(`DELETE FROM client`)
 	if err != nil {
 		log.Fatal(err)
 	}
