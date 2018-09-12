@@ -1,9 +1,28 @@
 package common
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
+
+type Dao interface {
+	InsertClient(name string) Client
+	InsertCustomer(code, firstName string, lastName string, email string, client Client) Customer
+	InsertProduct(name string) Product
+	UpdateCustomerName(customer Customer, newFullName string)
+	UpdateProductName(product Product, newName string)
+	UpdateCustomerEmailAndLinkToProduct(customer Customer, newEmail string, product Product)
+	UpdateClientName(client Client, newName string)
+	DeleteClient(client Client)
+	DeleteCustomer(customer Customer)
+	DeleteAllCustomers()
+	DeleteAllProducts()
+	DeleteAllClients()
+	PrintDatabaseState()
+	Shutdown()
+}
 
 type DbParams struct {
 	Host     string
@@ -67,6 +86,7 @@ type Client struct {
 type Customer struct {
 	UpdatableRecord
 	Client       Client
+	Products     []Product `gorm:"many2many:customer_product;"`
 	ClientId     int64
 	Code         string
 	FirstName    string
@@ -77,6 +97,8 @@ type Customer struct {
 
 type Product struct {
 	UpdatableRecord
+	Name   string
+	Active bool
 }
 
 type CustomerProduct struct {
@@ -93,4 +115,13 @@ func NewClient(id int64) Client {
 
 func NewProduct(id int64) Product {
 	return Product{UpdatableRecord: UpdatableRecord{DataRecord: DataRecord{Id: id}}}
+}
+
+func SplitFullName(fullName string) (string, string, error) {
+	var err error
+	names := strings.Split(fullName, " ")
+	if len(names) != 2 {
+		err = errors.New("Invalid full name")
+	}
+	return names[0], names[1], err
 }
