@@ -13,6 +13,7 @@ type gormDao struct {
 	*gorm.DB
 }
 
+//noinspection GoExportedFuncWithUnexportedType
 func Init() gormDao {
 	db, err := gorm.Open("postgres", DefaultConnectionString())
 	if err != nil {
@@ -39,7 +40,7 @@ func (dao gormDao) PrintDatabaseState() {
 func (dao gormDao) printClients() {
 	log.Printf("*** %-15s ***", "Clients")
 	var clients []Client
-	result := dao.Find(&clients)
+	result := dao.Order("id").Find(&clients)
 	if result.Error != nil {
 		log.Fatal(result.Error)
 	}
@@ -59,7 +60,7 @@ func (dao gormDao) printClients() {
 func (dao gormDao) printProducts() {
 	log.Printf("*** %-15s ***", "Products")
 	var products []Product
-	result := dao.Find(&products)
+	result := dao.Order("id").Find(&products)
 	if result.Error != nil {
 		log.Fatal(result.Error)
 	}
@@ -89,7 +90,7 @@ func (dao gormDao) printCustomers() {
 		"Updated At")
 	log.Println(strings.Repeat("-", 194))
 	var customers []Customer
-	result := dao.Preload("Products").Find(&customers)
+	result := dao.Preload("Products").Order("id").Find(&customers)
 	if result.Error != nil {
 		log.Fatal(result.Error)
 	}
